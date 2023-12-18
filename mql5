@@ -1,0 +1,95 @@
+
+//+------------------------------------------------------------------+
+//|                                                        zigzag.mq5 |
+//|                        Copyright 2022, forexroboteasy.com        |
+//|                                         Developed by Forex Robot Easy Team|
+//|                        https://www.forexroboteasy.com              |
+//+------------------------------------------------------------------+
+#property copyright 'Copyright 2022, forexroboteasy.com'
+#property link      'https://www.forexroboteasy.com'
+#property version   '1.00'
+#property description 'ZigZag Lines MTF for MT5'
+
+//+------------------------------------------------------------------+
+//| Indicator initialization function                                  |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+    // Indicator buffers mapping
+    IndicatorSetString(INDICATOR_SHORTNAME, 'ZigZag MTF');
+    SetIndexStyle(0, DRAW_LINE);
+    SetIndexBuffer(0, ZigZagBuffer);
+
+    return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                               |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &time[],
+                const double &open[],
+                const double &high[],
+                const double &low[],
+                const double &close[],
+                const long &tick_volume[],
+                const long &volume[],
+                const int &spread[])
+{
+    int limit = rates_total - prev_calculated;
+
+    for (int i = 0; i < limit; i++)
+    {
+        // ZigZag calculation
+        double currentHigh = high[i];
+        double currentLow = low[i];
+        double currentClose = close[i];
+
+        if (i > 0)
+        {
+            if (currentHigh > high[i - 1] && currentHigh > high[i + 1])
+            {
+                // Draw resistance line
+                DrawLine(currentHigh, currentLow, COLOR_RED);
+            }
+            else if (currentLow < low[i - 1] && currentLow < low[i + 1])
+            {
+                // Draw support line
+                DrawLine(currentLow, currentHigh, COLOR_GREEN);
+            }
+        }
+
+        // Draw current target
+        if (i == limit - 1)
+        {
+            DrawTarget(currentClose);
+        }
+    }
+
+    return(rates_total);
+}
+
+//+------------------------------------------------------------------+
+//| Function to draw a line on the chart                              |
+//+------------------------------------------------------------------+
+void DrawLine(const double startPrice,
+              const double endPrice,
+              const color lineColor)
+{
+    ObjectCreate(0, 'ZigZagLine', OBJ_TREND, 0, 0, 0, 0);
+    ObjectSetInteger(0, 'ZigZagLine', OBJPROP_COLOR, lineColor);
+    ObjectSetDouble(0, 'ZigZagLine', OBJPROP_PRICE1, startPrice);
+    ObjectSetDouble(0, 'ZigZagLine', OBJPROP_PRICE2, endPrice);
+}
+
+//+------------------------------------------------------------------+
+//| Function to draw a target on the chart                            |
+//+------------------------------------------------------------------+
+void DrawTarget(const double targetPrice)
+{
+    ObjectCreate(0, 'Target', OBJ_ARROW, 0, 0, 0, 0);
+    ObjectSetInteger(0, 'Target', OBJPROP_ARROWCODE, SYMBOL_ARROWUP);
+    ObjectSetDouble(0, 'Target', OBJPROP_PRICE, targetPrice);
+    ObjectSetInteger(0, 'Target', OBJPROP_COLOR, COLOR_BLUE);
+}
